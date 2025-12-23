@@ -22,6 +22,8 @@ package org.wso2.carbon.identity.authenticator.github.internal;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.service.component.ComponentContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
 import org.wso2.carbon.identity.application.authentication.framework.ApplicationAuthenticator;
 import org.wso2.carbon.identity.authenticator.github.GithubAuthenticator;
 
@@ -29,13 +31,15 @@ import java.util.Hashtable;
 import org.wso2.carbon.identity.authenticator.github.GithubExecutor;
 import org.wso2.carbon.identity.flow.execution.engine.graph.Executor;
 
-/**
- * @scr.component name="identity.application.authenticator.Github.component" immediate="true"
- */
+@Component(
+        name = "identity.application.authenticator.Github.component",
+        immediate = true
+)
 public class GithubAuthenticatorServiceComponent {
 
     private static final Log log = LogFactory.getLog(GithubAuthenticatorServiceComponent.class);
 
+    @Activate
     protected void activate(ComponentContext ctxt) {
         try {
             GithubAuthenticator authenticator = new GithubAuthenticator();
