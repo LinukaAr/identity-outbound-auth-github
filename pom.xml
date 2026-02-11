@@ -176,11 +176,11 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>2.3.1</version>
+                <version>3.14.1</version>
                 <configuration>
                     <encoding>UTF-8</encoding>
-                    <source>1.7</source>
-                    <target>1.7</target>
+                    <source>21</source>
+                    <target>21</target>
                 </configuration>
             </plugin>
             <plugin>
@@ -284,5 +284,6 @@
         <org.wso2.securevault.version>1.0.0-wso2v2</org.wso2.securevault.version>
         <commons-lang.wso2.version>2.6.0.wso2v1</commons-lang.wso2.version>
         <encoder.wso2.version>1.2.0.wso2v1</encoder.wso2.version>
+        <javax.servlet.version.range>[3.1.0, 4.0.0)</javax.servlet.version.range>
     </properties>
 </project>
