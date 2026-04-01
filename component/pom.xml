@@ -21,16 +21,38 @@
     <parent>
         <groupId>org.wso2.carbon.extension.identity.authenticator</groupId>
         <artifactId>org.wso2.carbon.extension.identity.authenticator.github</artifactId>
-        <version>1.2.1-SNAPSHOT</version>
+        <version>1.2.0</version>
     </parent>
 
     <groupId>org.wso2.carbon.extension.identity.authenticator</groupId>
     <artifactId>org.wso2.carbon.extension.identity.authenticator.github.connector</artifactId>
-    <version>1.2.1-SNAPSHOT</version>
+    <version>1.2.0</version>
 
     <packaging>bundle</packaging>
     <name>WSO2 Carbon - Authenticator Library For Github</name>
     <url>http://wso2.org</url>
+    <dependencies>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.outbound.auth.oidc</groupId>
+            <artifactId>org.wso2.carbon.identity.application.authenticator.oidc</artifactId>
+            <version>${identity.outbound.auth.oidc.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.wso2.carbon.identity.framework</groupId>
+                    <artifactId>org.wso2.carbon.identity.debug.framework</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.wso2.carbon.identity.framework</groupId>
+                    <artifactId>org.wso2.carbon.identity.debug.idp</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.framework</groupId>
+            <artifactId>org.wso2.carbon.identity.debug.framework</artifactId>
+            <version>${carbon.identity.framework.version}</version>
+        </dependency>
+    </dependencies>
     <build>
         <pluginManagement>
             <plugins>
@@ -59,6 +81,8 @@
                             version="${carbon.identity.package.import.version.range}",
                             org.wso2.carbon.identity.application.authenticator.oidc;
                             version="${identity.outbound.auth.oidc.import.version.range}",
+                            org.wso2.carbon.identity.application.authenticator.oidc.debug;
+                            version="${identity.outbound.auth.oidc.import.version.range}",
                             org.wso2.carbon.identity.application.common.model;
                             version="${carbon.identity.package.import.version.range}",
                             org.wso2.carbon.identity.application.common.util;
@@ -74,6 +98,12 @@
                             org.apache.oltu.oauth2.*; version="${oltu.package.import.version.range}",
                             org.wso2.carbon.identity.flow.execution.engine.*;
                             version="${carbon.identity.package.import.version.range}",
+                            org.wso2.carbon.identity.debug.framework.extension;
+                            version="[7.8,8.0)",
+                            org.wso2.carbon.identity.debug.framework.core.*;
+                            version="[7.8,8.0)",
+                            org.wso2.carbon.identity.debug.framework.exception.*;
+                            version="[7.8,8.0)",
                             *;resolution:=optional
                         </Import-Package>
                         <Export-Package>

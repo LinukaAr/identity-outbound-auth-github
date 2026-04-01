@@ -26,9 +26,11 @@ import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.wso2.carbon.identity.application.authentication.framework.ApplicationAuthenticator;
 import org.wso2.carbon.identity.authenticator.github.GithubAuthenticator;
+import org.wso2.carbon.identity.authenticator.github.debug.GitHubDebugProtocolProvider;
 
 import java.util.Hashtable;
 import org.wso2.carbon.identity.authenticator.github.GithubExecutor;
+import org.wso2.carbon.identity.debug.framework.extension.DebugProtocolProvider;
 import org.wso2.carbon.identity.flow.execution.engine.graph.Executor;
 
 @Component(
@@ -47,6 +49,8 @@ public class GithubAuthenticatorServiceComponent {
             ctxt.getBundleContext().registerService(ApplicationAuthenticator.class.getName(),
                     authenticator, props);
             ctxt.getBundleContext().registerService(Executor.class.getName(), GithubExecutor.getInstance(), null);
+            ctxt.getBundleContext().registerService(DebugProtocolProvider.class.getName(),
+                    new GitHubDebugProtocolProvider(), null);
             if (log.isDebugEnabled()) {
                 log.debug("Github authenticator is activated");
             }
