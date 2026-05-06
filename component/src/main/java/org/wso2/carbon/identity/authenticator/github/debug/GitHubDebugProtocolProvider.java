@@ -68,9 +68,4 @@ public class GitHubDebugProtocolProvider implements DebugProtocolProvider {
         return callbackHandler;
     }
 
-    @Override
-    public boolean supports(String protocolType) {
-
-        return PROTOCOL_TYPE.equalsIgnoreCase(protocolType);
-    }
 }

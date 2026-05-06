@@ -25,6 +25,9 @@ public final class GitHubDebugConstants {
 
     public static final String PROTOCOL_TYPE = "GitHub";
     public static final String DEFAULT_GITHUB_SCOPE = "user user:email";
+    public static final String USERINFO_ENDPOINT = "userinfoEndpoint";
+    public static final String USERINFO = "userinfo";
+    public static final String DEBUG_SESSION_ID = "debugSessionId";
 
     private GitHubDebugConstants() {
         // Prevent instantiation.

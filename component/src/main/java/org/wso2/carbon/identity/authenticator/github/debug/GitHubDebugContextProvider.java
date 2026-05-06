@@ -31,6 +31,8 @@ import org.wso2.carbon.identity.authenticator.github.GithubExecutor;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.debug.framework.core.DebugContextProvider;
 import org.wso2.carbon.identity.debug.framework.exception.ContextResolutionException;
+import org.wso2.carbon.identity.debug.framework.model.DebugContext;
+import org.wso2.carbon.identity.debug.framework.DebugFrameworkConstants;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdentityProviderManager;
 
@@ -49,7 +51,7 @@ public class GitHubDebugContextProvider extends DebugContextProvider {
     private static final Log LOG = LogFactory.getLog(GitHubDebugContextProvider.class);
 
     @Override
-    public Map<String, Object> resolveContext(HttpServletRequest request) throws ContextResolutionException {
+    public DebugContext resolveContext(HttpServletRequest request) throws ContextResolutionException {
 
         if (request == null) {
             throw new ContextResolutionException("HTTP request is null");
@@ -72,20 +74,20 @@ public class GitHubDebugContextProvider extends DebugContextProvider {
     }
 
     @Override
-    public Map<String, Object> resolveContext(String connectionId, String authenticatorName)
+    public DebugContext resolveContext(String connectionId, String authenticatorName)
             throws ContextResolutionException {
 
         if (StringUtils.isEmpty(connectionId)) {
             throw new ContextResolutionException("IdP ID is null or empty");
         }
 
-        Map<String, Object> context = new HashMap<>();
         try {
+            Map<String, Object> contextMap = new HashMap<>();
             String tenantDomain = IdentityTenantUtil.resolveTenantDomain();
             IdentityProvider idp = retrieveIdentityProvider(connectionId, tenantDomain);
             validateIdpIsEnabled(idp);
 
-            populateIdpContextProperties(context, idp);
+            populateIdpContextProperties(contextMap, idp);
 
             FederatedAuthenticatorConfig authenticatorConfig = findGitHubAuthenticatorConfig(idp, authenticatorName);
             if (authenticatorConfig == null) {
@@ -93,9 +95,12 @@ public class GitHubDebugContextProvider extends DebugContextProvider {
                         + idp.getIdentityProviderName());
             }
 
-            extractGitHubParameters(authenticatorConfig, context);
-            populateAuthenticatorContextProperties(context, authenticatorConfig);
-            populateDebugSessionProperties(context, tenantDomain);
+            extractGitHubParameters(authenticatorConfig, contextMap);
+            populateAuthenticatorContextProperties(contextMap, authenticatorConfig);
+            populateDebugSessionProperties(contextMap, tenantDomain);
+            
+            DebugContext context = DebugContext.buildFromMap(contextMap);
+            context.setProperty(DebugFrameworkConstants.CONNECTION_ID, connectionId);
             return context;
         } catch (ContextResolutionException e) {
             LOG.error("Error resolving GitHub debug context: " + e.getMessage(), e);
@@ -273,7 +278,7 @@ public class GitHubDebugContextProvider extends DebugContextProvider {
 
         String userInfoEndpoint = executor.getUserInfoEndpoint(propertyMap);
         if (StringUtils.isNotEmpty(userInfoEndpoint)) {
-            context.put(OIDCDebugConstants.USERINFO_ENDPOINT, userInfoEndpoint);
+            context.put(GitHubDebugConstants.USERINFO_ENDPOINT, userInfoEndpoint);
         }
 
         String clientSecret = OIDCConfigurationExtractor.findPropertyValue(
@@ -308,9 +313,10 @@ public class GitHubDebugContextProvider extends DebugContextProvider {
     private void populateDebugSessionProperties(Map<String, Object> context, String tenantDomain) {
 
         context.put(OIDCDebugConstants.IS_DEBUG_FLOW, Boolean.TRUE);
-        context.put(OIDCDebugConstants.DEBUG_SESSION_ID, UUID.randomUUID().toString());
+        context.put(GitHubDebugConstants.DEBUG_SESSION_ID, UUID.randomUUID().toString());
         context.put(OIDCDebugConstants.DEBUG_TIMESTAMP, System.currentTimeMillis());
         context.put(OIDCDebugConstants.DEBUG_TENANT_DOMAIN, tenantDomain);
         context.put(OIDCDebugConstants.DEBUG_CONTEXT_ID, "debug-" + UUID.randomUUID());
     }
+
 }

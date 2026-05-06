@@ -21,7 +21,7 @@ package org.wso2.carbon.identity.authenticator.github.debug;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
+import org.wso2.carbon.identity.debug.framework.model.DebugContext;
 import org.wso2.carbon.identity.application.authenticator.oidc.debug.OIDCDebugConstants;
 import org.wso2.carbon.identity.application.authenticator.oidc.debug.OIDCDebugProcessor;
 import org.wso2.carbon.identity.application.authenticator.oidc.debug.client.OAuth2TokenClient;
@@ -42,7 +42,7 @@ public class GitHubDebugProcessor extends OIDCDebugProcessor {
     private static final Log LOG = LogFactory.getLog(GitHubDebugProcessor.class);
 
     @Override
-    protected Map<String, Object> extractDebugData(AuthenticationContext context) {
+    protected Map<String, Object> extractDebugData(DebugContext context) {
 
         Map<String, Object> claims = new HashMap<>(super.extractDebugData(context));
         if (!claims.isEmpty()) {
@@ -57,9 +57,9 @@ public class GitHubDebugProcessor extends OIDCDebugProcessor {
             return claims;
         }
 
-        String userInfoEndpoint = (String) context.getProperty(OIDCDebugConstants.USERINFO_ENDPOINT);
+        String userInfoEndpoint = (String) context.getProperty(GitHubDebugConstants.USERINFO_ENDPOINT);
         if (StringUtils.isBlank(userInfoEndpoint)) {
-            userInfoEndpoint = (String) context.getProperty(OIDCDebugConstants.USERINFO);
+            userInfoEndpoint = (String) context.getProperty(GitHubDebugConstants.USERINFO);
         }
         if (StringUtils.isBlank(userInfoEndpoint)) {
             context.setProperty(OIDCDebugConstants.STEP_CLAIM_EXTRACTION_STATUS, OIDCDebugConstants.STATUS_FAILED);
@@ -67,8 +67,13 @@ public class GitHubDebugProcessor extends OIDCDebugProcessor {
         }
 
         try {
-            OAuth2TokenClient tokenClient = new OAuth2TokenClient();
-            claims.putAll(tokenClient.fetchUserInfoClaims(accessToken, userInfoEndpoint, new UrlConnectionHttpFetcher()));
+            Map<String, String> headers = new HashMap<>();
+            headers.put("Authorization", "Bearer " + accessToken);
+            UrlConnectionHttpFetcher fetcher = new UrlConnectionHttpFetcher();
+            Map<String, Object> userInfoClaims = fetcher.getJson(userInfoEndpoint, headers);
+            if (userInfoClaims != null) {
+                claims.putAll(userInfoClaims);
+            }
             enrichPrimaryEmail(claims, accessToken, context);
             normalizeGitHubIdentifierClaims(claims);
             normalizeComplexClaimValues(claims);
@@ -87,7 +92,7 @@ public class GitHubDebugProcessor extends OIDCDebugProcessor {
         }
     }
 
-    private void enrichPrimaryEmail(Map<String, Object> claims, String accessToken, AuthenticationContext context) {
+    private void enrichPrimaryEmail(Map<String, Object> claims, String accessToken, DebugContext context) {
 
         if (claims.get(GithubAuthenticatorConstants.USER_EMAIL) != null) {
             return;
