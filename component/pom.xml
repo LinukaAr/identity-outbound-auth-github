@@ -52,6 +52,11 @@
             <artifactId>org.wso2.carbon.identity.debug.framework</artifactId>
             <version>${carbon.identity.framework.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.framework</groupId>
+            <artifactId>org.wso2.carbon.identity.debug.idp</artifactId>
+            <version>${carbon.identity.framework.version}</version>
+        </dependency>
     </dependencies>
     <build>
         <pluginManagement>
@@ -98,11 +103,17 @@
                             org.apache.oltu.oauth2.*; version="${oltu.package.import.version.range}",
                             org.wso2.carbon.identity.flow.execution.engine.*;
                             version="${carbon.identity.package.import.version.range}",
+                            org.wso2.carbon.identity.debug.framework;
+                            version="[7.8,8.0)",
                             org.wso2.carbon.identity.debug.framework.extension;
                             version="[7.8,8.0)",
                             org.wso2.carbon.identity.debug.framework.core.*;
                             version="[7.8,8.0)",
+                            org.wso2.carbon.identity.debug.framework.model.*;
+                            version="[7.8,8.0)",
                             org.wso2.carbon.identity.debug.framework.exception.*;
+                            version="[7.8,8.0)",
+                            org.wso2.carbon.identity.debug.idp.core.*;
                             version="[7.8,8.0)",
                             *;resolution:=optional
                         </Import-Package>

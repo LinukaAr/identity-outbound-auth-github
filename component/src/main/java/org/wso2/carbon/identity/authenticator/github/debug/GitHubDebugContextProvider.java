@@ -29,52 +29,27 @@ import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.authenticator.github.GithubAuthenticatorConstants;
 import org.wso2.carbon.identity.authenticator.github.GithubExecutor;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
-import org.wso2.carbon.identity.debug.framework.core.DebugContextProvider;
-import org.wso2.carbon.identity.debug.framework.exception.ContextResolutionException;
-import org.wso2.carbon.identity.debug.framework.model.DebugContext;
-import org.wso2.carbon.identity.debug.framework.DebugFrameworkConstants;
+import org.wso2.carbon.identity.debug.idp.core.IdpDebugConstants;
+import org.wso2.carbon.identity.debug.idp.core.IdpDebugContextProvider;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdentityProviderManager;
+import org.wso2.carbon.identity.debug.framework.exception.ContextResolutionException;
+import org.wso2.carbon.identity.debug.framework.model.DebugContext;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import javax.servlet.http.HttpServletRequest;
-
 /**
  * GitHub-specific debug context provider.
  * Reuses the OIDC debug payload shape while resolving GitHub-specific defaults.
  */
-public class GitHubDebugContextProvider extends DebugContextProvider {
+public class GitHubDebugContextProvider extends IdpDebugContextProvider {
 
     private static final Log LOG = LogFactory.getLog(GitHubDebugContextProvider.class);
 
     @Override
-    public DebugContext resolveContext(HttpServletRequest request) throws ContextResolutionException {
-
-        if (request == null) {
-            throw new ContextResolutionException("HTTP request is null");
-        }
-
-        String idpId = request.getParameter("idpId");
-        String authenticatorName = request.getParameter("authenticator");
-
-        if (StringUtils.isEmpty(idpId)) {
-            throw new ContextResolutionException("IdP ID parameter is missing");
-        }
-        if (!idpId.matches("[a-zA-Z0-9._-]+")) {
-            throw new ContextResolutionException("Invalid IdP ID format - contains invalid characters");
-        }
-        if (StringUtils.isNotEmpty(authenticatorName) && !authenticatorName.matches("[a-zA-Z0-9._-]+")) {
-            throw new ContextResolutionException("Invalid authenticator name format - contains invalid characters");
-        }
-
-        return resolveContext(idpId, authenticatorName);
-    }
-
-    @Override
-    public DebugContext resolveContext(String connectionId, String authenticatorName)
+    public DebugContext resolveContext(String connectionId, String resourceType)
             throws ContextResolutionException {
 
         if (StringUtils.isEmpty(connectionId)) {
@@ -89,7 +64,7 @@ public class GitHubDebugContextProvider extends DebugContextProvider {
 
             populateIdpContextProperties(contextMap, idp);
 
-            FederatedAuthenticatorConfig authenticatorConfig = findGitHubAuthenticatorConfig(idp, authenticatorName);
+            FederatedAuthenticatorConfig authenticatorConfig = findGitHubAuthenticatorConfig(idp, resourceType);
             if (authenticatorConfig == null) {
                 throw new ContextResolutionException("No GitHub authenticator configuration found for IdP: "
                         + idp.getIdentityProviderName());
@@ -100,7 +75,7 @@ public class GitHubDebugContextProvider extends DebugContextProvider {
             populateDebugSessionProperties(contextMap, tenantDomain);
             
             DebugContext context = DebugContext.buildFromMap(contextMap);
-            context.setProperty(DebugFrameworkConstants.CONNECTION_ID, connectionId);
+            context.setProperty(IdpDebugConstants.CONNECTION_ID, connectionId);
             return context;
         } catch (ContextResolutionException e) {
             LOG.error("Error resolving GitHub debug context: " + e.getMessage(), e);
@@ -113,7 +88,7 @@ public class GitHubDebugContextProvider extends DebugContextProvider {
     }
 
     @Override
-    public boolean canResolve(String connectionId) {
+    public boolean canHandle(String connectionId) {
 
         try {
             if (StringUtils.isEmpty(connectionId)) {
@@ -133,7 +108,7 @@ public class GitHubDebugContextProvider extends DebugContextProvider {
     public static String extractScope(Map<String, String> authenticatorProperties) {
 
         String scope = OIDCConfigurationExtractor.findPropertyValue(
-                authenticatorProperties, OIDCConfigurationExtractor.SCOPE_PROPERTY_NAMES);
+                authenticatorProperties, OIDCConfigurationExtractor.getScopePropertyNames());
         if (StringUtils.isNotEmpty(scope)) {
             return scope;
         }
@@ -199,9 +174,9 @@ public class GitHubDebugContextProvider extends DebugContextProvider {
     private void populateIdpContextProperties(Map<String, Object> context, IdentityProvider idp) {
 
         context.put(OIDCDebugConstants.DEBUG_IDP_NAME, idp.getIdentityProviderName());
-        context.put("DEBUG_IDP_RESOURCE_ID",
+        context.put(OIDCDebugConstants.DEBUG_IDP_RESOURCE_ID,
                 StringUtils.defaultIfEmpty(idp.getResourceId(), idp.getIdentityProviderName()));
-        context.put("DEBUG_IDP_DESCRIPTION", idp.getIdentityProviderDescription());
+        context.put(OIDCDebugConstants.DEBUG_IDP_DESCRIPTION, idp.getIdentityProviderDescription());
         context.put(OIDCDebugConstants.IDP_CONFIG, idp);
     }
 
@@ -255,7 +230,7 @@ public class GitHubDebugContextProvider extends DebugContextProvider {
         GithubExecutor executor = GithubExecutor.getInstance();
 
         String clientId = OIDCConfigurationExtractor.findPropertyValue(
-                propertyMap, OIDCConfigurationExtractor.CLIENT_ID_PROPERTY_NAMES);
+                propertyMap, OIDCConfigurationExtractor.getClientIdPropertyNames());
         if (StringUtils.isEmpty(clientId)) {
             throw new ContextResolutionException("Client ID not found in authenticator configuration");
         }
@@ -282,7 +257,7 @@ public class GitHubDebugContextProvider extends DebugContextProvider {
         }
 
         String clientSecret = OIDCConfigurationExtractor.findPropertyValue(
-                propertyMap, OIDCConfigurationExtractor.CLIENT_SECRET_PROPERTY_NAMES);
+                propertyMap, OIDCConfigurationExtractor.getClientSecretPropertyNames());
         if (StringUtils.isNotEmpty(clientSecret)) {
             context.put(OIDCDebugConstants.CLIENT_SECRET, clientSecret);
         }
@@ -290,7 +265,7 @@ public class GitHubDebugContextProvider extends DebugContextProvider {
         context.put(OIDCDebugConstants.RESPONSE_TYPE, "code");
         context.put(OIDCDebugConstants.PKCE_ENABLED, true);
         context.put(OIDCDebugConstants.PKCE_METHOD, OIDCDebugConstants.PKCE_METHOD_S256);
-        context.put("protocol", GitHubDebugConstants.PROTOCOL_TYPE);
+        context.put(OIDCDebugConstants.CONTEXT_PROTOCOL, GitHubDebugConstants.PROTOCOL_TYPE);
 
         String usePrimaryEmail = propertyMap.get(GithubAuthenticatorConstants.USE_PRIMARY_EMAIL);
         if (StringUtils.isNotEmpty(usePrimaryEmail)) {
@@ -314,9 +289,9 @@ public class GitHubDebugContextProvider extends DebugContextProvider {
 
         context.put(OIDCDebugConstants.IS_DEBUG_FLOW, Boolean.TRUE);
         context.put(GitHubDebugConstants.DEBUG_SESSION_ID, UUID.randomUUID().toString());
+        context.put(OIDCDebugConstants.DEBUG_ID, "debug-" + UUID.randomUUID());
         context.put(OIDCDebugConstants.DEBUG_TIMESTAMP, System.currentTimeMillis());
         context.put(OIDCDebugConstants.DEBUG_TENANT_DOMAIN, tenantDomain);
-        context.put(OIDCDebugConstants.DEBUG_CONTEXT_ID, "debug-" + UUID.randomUUID());
     }
 
 }

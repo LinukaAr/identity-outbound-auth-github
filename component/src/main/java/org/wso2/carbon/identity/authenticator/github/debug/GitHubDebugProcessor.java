@@ -18,19 +18,23 @@
 
 package org.wso2.carbon.identity.authenticator.github.debug;
 
+import org.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.identity.debug.framework.model.DebugContext;
 import org.wso2.carbon.identity.application.authenticator.oidc.debug.OIDCDebugConstants;
 import org.wso2.carbon.identity.application.authenticator.oidc.debug.OIDCDebugProcessor;
-import org.wso2.carbon.identity.application.authenticator.oidc.debug.client.OAuth2TokenClient;
-import org.wso2.carbon.identity.application.authenticator.oidc.debug.client.UrlConnectionHttpFetcher;
 import org.wso2.carbon.identity.authenticator.github.GithubAuthenticatorConstants;
 import org.wso2.carbon.identity.authenticator.github.GithubExecutorUtil;
+import org.wso2.carbon.identity.debug.framework.model.DebugContext;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -67,10 +71,7 @@ public class GitHubDebugProcessor extends OIDCDebugProcessor {
         }
 
         try {
-            Map<String, String> headers = new HashMap<>();
-            headers.put("Authorization", "Bearer " + accessToken);
-            UrlConnectionHttpFetcher fetcher = new UrlConnectionHttpFetcher();
-            Map<String, Object> userInfoClaims = fetcher.getJson(userInfoEndpoint, headers);
+            Map<String, Object> userInfoClaims = fetchUserInfoClaims(userInfoEndpoint, accessToken);
             if (userInfoClaims != null) {
                 claims.putAll(userInfoClaims);
             }
@@ -90,6 +91,42 @@ public class GitHubDebugProcessor extends OIDCDebugProcessor {
             context.setProperty(OIDCDebugConstants.STEP_CLAIM_EXTRACTION_STATUS, OIDCDebugConstants.STATUS_FAILED);
             return new HashMap<>();
         }
+    }
+
+    private Map<String, Object> fetchUserInfoClaims(String userInfoEndpoint, String accessToken) throws Exception {
+
+        HttpURLConnection connection = (HttpURLConnection) new URL(userInfoEndpoint).openConnection();
+        connection.setRequestMethod("GET");
+        connection.setRequestProperty("Authorization", "Bearer " + accessToken);
+        connection.setRequestProperty("Accept", "application/json");
+
+        int statusCode = connection.getResponseCode();
+        if (statusCode != HttpURLConnection.HTTP_OK) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Failed to retrieve GitHub user info. Status code: " + statusCode);
+            }
+            return new HashMap<>();
+        }
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
+            StringBuilder builder = new StringBuilder();
+            String inputLine;
+            while ((inputLine = reader.readLine()) != null) {
+                builder.append(inputLine);
+            }
+            return jsonObjectToMap(new JSONObject(builder.toString()));
+        }
+    }
+
+    private Map<String, Object> jsonObjectToMap(JSONObject jsonObject) {
+
+        Map<String, Object> values = new HashMap<>();
+        Iterator<String> keys = jsonObject.keys();
+        while (keys.hasNext()) {
+            String key = keys.next();
+            values.put(key, jsonObject.opt(key));
+        }
+        return values;
     }
 
     private void enrichPrimaryEmail(Map<String, Object> claims, String accessToken, DebugContext context) {

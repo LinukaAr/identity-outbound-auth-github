@@ -23,6 +23,7 @@ import org.wso2.carbon.identity.application.authenticator.oidc.debug.OIDCDebugEx
 import org.wso2.carbon.identity.debug.framework.core.DebugContextProvider;
 import org.wso2.carbon.identity.debug.framework.core.DebugExecutor;
 import org.wso2.carbon.identity.debug.framework.core.DebugProcessor;
+import org.wso2.carbon.identity.debug.idp.core.IdpDebugProcessor;
 import org.wso2.carbon.identity.debug.framework.extension.DebugCallbackHandler;
 import org.wso2.carbon.identity.debug.framework.extension.DebugProtocolProvider;
 
@@ -35,7 +36,7 @@ public class GitHubDebugProtocolProvider implements DebugProtocolProvider {
 
     private final DebugContextProvider contextProvider = new GitHubDebugContextProvider();
     private final DebugExecutor executor = new OIDCDebugExecutor();
-    private final DebugProcessor processor = new GitHubDebugProcessor();
+    private final IdpDebugProcessor processor = new GitHubDebugProcessor();
     private final DebugCallbackHandler callbackHandler = new OIDCDebugCallbackHandler(processor, PROTOCOL_TYPE);
 
     @Override
